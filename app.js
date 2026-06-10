@@ -244,7 +244,7 @@ function selectWeek(index) {
   renderTimetable(week.lessons, selectedWeekIndex === currentWeekIndex);
   const dateRange = formatDateRange(week);
   elements.appTitle.textContent = dateRange;
-  document.title = `${dateRange} | 時間割`;
+  document.title = "FP時間割";
   elements.weekLabel.textContent = weekDisplayLabel(week);
   elements.weekRange.textContent = "";
   elements.previousWeek.disabled = selectedWeekIndex === 0;
