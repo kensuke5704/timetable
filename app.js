@@ -9,7 +9,7 @@ const config = {
 
 const weekdays = ["月", "火", "水", "木", "金"];
 const dayIndexes = [1, 2, 3, 4, 5];
-const cacheKey = `timetable:v2:${config.spreadsheetId}:${config.range}`;
+const cacheKey = `timetable:v3:${config.spreadsheetId}:${config.range}`;
 const tokenScope = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const firstWeekRows = [
   { name: 6, content: 7 },
@@ -18,6 +18,9 @@ const firstWeekRows = [
   { name: 19, content: 20 },
 ];
 const firstWeekdayColumn = 1;
+const rowsPerWeek = 21;
+const weekCount = 5;
+const firstDateRow = 3;
 
 const sampleLessons = [
   [
@@ -60,15 +63,19 @@ const elements = {
   lastUpdated: document.querySelector("#last-updated"),
   loadingOverlay: document.querySelector("#loading-overlay"),
   notice: document.querySelector("#notice"),
+  nextWeek: document.querySelector("#next-week"),
+  previousWeek: document.querySelector("#previous-week"),
   refreshButton: document.querySelector("#refresh-button"),
   signInButton: document.querySelector("#sign-in-button"),
   timetable: document.querySelector("#timetable"),
+  weekLabel: document.querySelector("#week-label"),
   weekRange: document.querySelector("#week-range"),
 };
 
 let accessToken = sessionStorage.getItem("googleAccessToken") || "";
 let tokenClient;
-let currentLessons = sampleLessons;
+let currentWeeks = [{ dates: [], lessons: sampleLessons }];
+let selectedWeekIndex = 0;
 
 function startOfWeek(date = new Date()) {
   const copy = new Date(date);
@@ -103,8 +110,8 @@ function cell(className, text) {
   return node;
 }
 
-function renderTimetable(lessons) {
-  const today = todayWeekdayIndex();
+function renderTimetable(lessons, highlightToday = true) {
+  const today = highlightToday ? todayWeekdayIndex() : -1;
   const fragment = document.createDocumentFragment();
   fragment.append(cell("corner-cell", ""));
 
@@ -141,24 +148,91 @@ function renderTimetable(lessons) {
   elements.timetable.replaceChildren(fragment);
 }
 
+function parseDayNumber(value) {
+  const match = String(value ?? "").match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
+
+function expectedCurrentWeekDays() {
+  const monday = startOfWeek();
+  return weekdays.map((_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    return date.getDate();
+  });
+}
+
+function findCurrentWeekIndex(weeks) {
+  const expectedDays = expectedCurrentWeekDays();
+  const exactIndex = weeks.findIndex(
+    (week) =>
+      week.dates.length === weekdays.length &&
+      week.dates.every((day, index) => day === expectedDays[index]),
+  );
+
+  if (exactIndex >= 0) return exactIndex;
+
+  const today = new Date();
+  const weekdayIndex = dayIndexes.indexOf(today.getDay());
+  if (weekdayIndex >= 0) {
+    const matchingIndex = weeks.findIndex(
+      (week) => week.dates[weekdayIndex] === today.getDate(),
+    );
+    if (matchingIndex >= 0) return matchingIndex;
+  }
+
+  return 0;
+}
+
+function weekDisplayLabel(week, index) {
+  const availableDates = week.dates.filter(Number.isFinite);
+  if (!availableDates.length) return `第${index + 1}週`;
+  return `第${index + 1}週　${availableDates[0]}日–${availableDates.at(-1)}日`;
+}
+
+function selectWeek(index) {
+  if (!currentWeeks.length) return;
+  selectedWeekIndex = Math.max(0, Math.min(index, currentWeeks.length - 1));
+  const week = currentWeeks[selectedWeekIndex];
+  const currentWeekIndex = findCurrentWeekIndex(currentWeeks);
+
+  renderTimetable(week.lessons, selectedWeekIndex === currentWeekIndex);
+  elements.weekLabel.textContent = weekDisplayLabel(week, selectedWeekIndex);
+  elements.weekRange.textContent = weekDisplayLabel(week, selectedWeekIndex);
+  elements.previousWeek.disabled = selectedWeekIndex === 0;
+  elements.nextWeek.disabled = selectedWeekIndex === currentWeeks.length - 1;
+}
+
 function parseSheet(values) {
-  const lastRequiredRow = firstWeekRows.at(-1).content;
+  const lastRequiredRow =
+    firstWeekRows.at(-1).content + rowsPerWeek * (weekCount - 1);
   if (!Array.isArray(values) || values.length < lastRequiredRow) {
     throw new Error("シートに時間割データがありません。");
   }
 
-  return firstWeekRows.map(({ name: nameRowNumber, content: contentRowNumber }) => {
-    const nameRow = values[nameRowNumber - 1] || [];
-    const contentRow = values[contentRowNumber - 1] || [];
-    return weekdays.map((_, dayIndex) => {
-      const columnIndex = firstWeekdayColumn + dayIndex;
-      const name = String(nameRow[columnIndex] || "").trim();
+  return Array.from({ length: weekCount }, (_, weekIndex) => {
+    const rowOffset = rowsPerWeek * weekIndex;
+    const dateRow = values[firstDateRow + rowOffset - 1] || [];
+    const dates = weekdays.map((_, dayIndex) =>
+      parseDayNumber(dateRow[firstWeekdayColumn + dayIndex]),
+    );
+    const lessons = firstWeekRows.map(
+      ({ name: nameRowNumber, content: contentRowNumber }) => {
+        const nameRow = values[nameRowNumber + rowOffset - 1] || [];
+        const contentRow = values[contentRowNumber + rowOffset - 1] || [];
+        return weekdays.map((_, dayIndex) => {
+          const columnIndex = firstWeekdayColumn + dayIndex;
+          const name = String(nameRow[columnIndex] || "").trim();
 
-      return {
-        name,
-        content: name ? String(contentRow[columnIndex] || "").trim() : "",
-      };
-    });
+          return {
+            name,
+            content: name ? String(contentRow[columnIndex] || "").trim() : "",
+          };
+        });
+      },
+    );
+
+    return { dates, lessons };
   });
 }
 
@@ -198,9 +272,9 @@ function cacheIsFromToday(cache) {
 }
 
 function applyCache(cache) {
-  if (!cache?.lessons) return false;
-  currentLessons = cache.lessons;
-  renderTimetable(currentLessons);
+  if (!Array.isArray(cache?.weeks) || !cache.weeks.length) return false;
+  currentWeeks = cache.weeks;
+  selectWeek(findCurrentWeekIndex(currentWeeks));
   elements.lastUpdated.textContent = formatUpdatedAt(cache.updatedAt);
   elements.dataSource.textContent = "Google スプレッドシートから取得しています";
   return true;
@@ -259,8 +333,8 @@ async function fetchTimetable({ manual = false } = {}) {
     }
 
     const data = await response.json();
-    const lessons = parseSheet(data.values);
-    const cache = { lessons, updatedAt: Date.now() };
+    const weeks = parseSheet(data.values);
+    const cache = { weeks, updatedAt: Date.now() };
     localStorage.setItem(cacheKey, JSON.stringify(cache));
     applyCache(cache);
     elements.signInButton.hidden = true;
@@ -306,7 +380,7 @@ function initialize() {
   elements.appTitle.textContent = config.title;
   elements.className.textContent = config.className;
   elements.weekRange.textContent = formatWeekRange();
-  renderTimetable(sampleLessons);
+  selectWeek(0);
 
   const cache = readCache();
   if (cache) applyCache(cache);
@@ -325,5 +399,7 @@ function initialize() {
 elements.refreshButton.addEventListener("click", () => fetchTimetable({ manual: true }));
 elements.signInButton.addEventListener("click", requestAccessToken);
 elements.accountButton.addEventListener("click", requestAccessToken);
+elements.previousWeek.addEventListener("click", () => selectWeek(selectedWeekIndex - 1));
+elements.nextWeek.addEventListener("click", () => selectWeek(selectedWeekIndex + 1));
 
 initialize();
