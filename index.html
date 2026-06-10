@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7faff" />
+    <meta name="description" content="Googleスプレッドシートと連携する学校向け週間時間割" />
+    <title>週間時間割</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="./app.js" type="module"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow" id="class-name">1年A組</p>
+          <h1 id="app-title">週間時間割</h1>
+          <p class="week-range" id="week-range"></p>
+        </div>
+
+        <div class="header-actions">
+          <button class="refresh-button" id="refresh-button" type="button">
+            更新
+          </button>
+          <button class="account-button" id="account-button" type="button" aria-label="Googleアカウント">
+            <span id="account-initial">G</span>
+            <img id="account-image" alt="" hidden />
+          </button>
+        </div>
+      </header>
+
+      <section class="notice" id="notice" hidden aria-live="polite"></section>
+
+      <section class="timetable-section" aria-label="週間時間割">
+        <div class="timetable-scroll">
+          <div class="timetable" id="timetable"></div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <div class="status-line">
+          <span class="status-label">最終更新</span>
+          <time id="last-updated">未取得</time>
+        </div>
+        <div class="permission-line">
+          <strong>閲覧のみ</strong>
+          <span id="data-source">サンプル時間割を表示しています</span>
+        </div>
+        <button class="sign-in-button" id="sign-in-button" type="button">
+          Googleでログイン
+        </button>
+      </footer>
+    </main>
+
+    <div class="loading-overlay" id="loading-overlay" hidden>
+      <div class="loading-panel" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>時間割を取得しています</span>
+      </div>
+    </div>
+  </body>
+</html>
