@@ -9,8 +9,15 @@ const config = {
 
 const weekdays = ["月", "火", "水", "木", "金"];
 const dayIndexes = [1, 2, 3, 4, 5];
-const cacheKey = `timetable:${config.spreadsheetId}:${config.range}`;
+const cacheKey = `timetable:v2:${config.spreadsheetId}:${config.range}`;
 const tokenScope = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const firstWeekRows = [
+  { name: 6, content: 7 },
+  { name: 10, content: 11 },
+  { name: 15, content: 16 },
+  { name: 19, content: 20 },
+];
+const firstWeekdayColumn = 1;
 
 const sampleLessons = [
   [
@@ -40,20 +47,6 @@ const sampleLessons = [
     { name: "数学", content: "一次方程式" },
     { name: "国語", content: "古典の読解" },
     { name: "理科", content: "物質の性質" },
-  ],
-  [
-    { name: "体育", content: "バレーボール" },
-    { name: "社会", content: "地理の学習" },
-    { name: "体育", content: "バレーボール" },
-    { name: "数学", content: "一次方程式" },
-    { name: "英語", content: "Unit 3" },
-  ],
-  [
-    { name: "LHR", content: "学級活動" },
-    { name: "総合", content: "探究活動" },
-    { name: "社会", content: "地理の学習" },
-    { name: "体育", content: "バレーボール" },
-    { name: "国語", content: "漢字テスト" },
   ],
 ];
 
@@ -128,19 +121,18 @@ function renderTimetable(lessons) {
       const lessonCell = cell("lesson-cell", "");
       if (column === today) lessonCell.classList.add("today-column");
 
-      if (!lesson.name && !lesson.content) {
-        const empty = document.createElement("span");
-        empty.className = "empty-lesson";
-        empty.textContent = "—";
-        lessonCell.append(empty);
-      } else {
+      if (lesson.name) {
         const name = document.createElement("span");
         name.className = "lesson-name";
         name.textContent = lesson.name;
-        const content = document.createElement("span");
-        content.className = "lesson-content";
-        content.textContent = lesson.content;
-        lessonCell.append(name, content);
+        lessonCell.append(name);
+
+        if (lesson.content) {
+          const content = document.createElement("span");
+          content.className = "lesson-content";
+          content.textContent = lesson.content;
+          lessonCell.append(content);
+        }
       }
       fragment.append(lessonCell);
     });
@@ -150,26 +142,22 @@ function renderTimetable(lessons) {
 }
 
 function parseSheet(values) {
-  if (!Array.isArray(values) || values.length < 2) {
+  const lastRequiredRow = firstWeekRows.at(-1).content;
+  if (!Array.isArray(values) || values.length < lastRequiredRow) {
     throw new Error("シートに時間割データがありません。");
   }
 
-  const rows = values.slice(1, 7);
-  const pairedColumns = (values[0]?.length || 0) >= 11;
-
-  return Array.from({ length: 6 }, (_, rowIndex) => {
-    const row = rows[rowIndex] || [];
+  return firstWeekRows.map(({ name: nameRowNumber, content: contentRowNumber }) => {
+    const nameRow = values[nameRowNumber - 1] || [];
+    const contentRow = values[contentRowNumber - 1] || [];
     return weekdays.map((_, dayIndex) => {
-      if (pairedColumns) {
-        return {
-          name: String(row[1 + dayIndex * 2] || "").trim(),
-          content: String(row[2 + dayIndex * 2] || "").trim(),
-        };
-      }
+      const columnIndex = firstWeekdayColumn + dayIndex;
+      const name = String(nameRow[columnIndex] || "").trim();
 
-      const raw = String(row[1 + dayIndex] || "").trim();
-      const [name = "", ...content] = raw.split(/\r?\n/);
-      return { name: name.trim(), content: content.join(" ").trim() };
+      return {
+        name,
+        content: name ? String(contentRow[columnIndex] || "").trim() : "",
+      };
     });
   });
 }
