@@ -391,8 +391,14 @@ async function googleApiFetch(url) {
   if (response.status === 401) {
     accessToken = "";
     localStorage.removeItem("googleAccessToken");
-    requestAccessToken();
-    return null;
+
+    try {
+      await requestAccessTokenSilently();
+      return googleApiFetch(url);
+    } catch {
+      requestAccessToken();
+      return null;
+    }
   }
 
   if (!response.ok) {
@@ -502,6 +508,44 @@ async function fetchTimetable({ manual = false } = {}) {
   } finally {
     setLoading(false);
   }
+}
+
+function requestAccessTokenSilently() {
+  return new Promise((resolve, reject) => {
+    if (!tokenClient) {
+      tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: config.googleClientId,
+        scope: `${tokenScope} openid profile email`,
+        callback: async (response) => {
+          if (response.error) {
+            reject(response);
+            return;
+          }
+
+          accessToken = response.access_token;
+          localStorage.setItem("googleAccessToken", accessToken);
+          elements.signInButton.hidden = true;
+          fetchProfile().catch(() => {});
+          resolve(accessToken);
+        },
+      });
+    } else {
+      tokenClient.callback = async (response) => {
+        if (response.error) {
+          reject(response);
+          return;
+        }
+
+        accessToken = response.access_token;
+        localStorage.setItem("googleAccessToken", accessToken);
+        elements.signInButton.hidden = true;
+        fetchProfile().catch(() => {});
+        resolve(accessToken);
+      };
+    }
+
+    tokenClient.requestAccessToken({ prompt: "" });
+  });
 }
 
 function requestAccessToken() {
