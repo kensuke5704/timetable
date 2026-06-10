@@ -306,7 +306,8 @@ function requestAccessToken() {
       accessToken = response.access_token;
       sessionStorage.setItem("googleAccessToken", accessToken);
       elements.signInButton.hidden = true;
-      await Promise.all([fetchProfile(), fetchTimetable()]);
+      fetchProfile().catch(() => {});
+      await fetchTimetable();
     },
   });
   tokenClient.requestAccessToken({ prompt: accessToken ? "" : "consent" });

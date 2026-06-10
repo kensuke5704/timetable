@@ -246,6 +246,10 @@ h1 {
   backdrop-filter: blur(2px);
 }
 
+.loading-overlay[hidden] {
+  display: none;
+}
+
 .loading-panel {
   display: flex;
   align-items: center;
