@@ -1,15 +1,14 @@
 const config = {
   googleClientId: "",
   spreadsheetId: "",
-  range: "時間割!A1:K7",
-  title: "週間時間割",
+  cellRange: "A1:H107",
   className: "1年A組",
   ...(window.TIMETABLE_CONFIG || {}),
 };
 
 const weekdays = ["月", "火", "水", "木", "金"];
 const dayIndexes = [1, 2, 3, 4, 5];
-const cacheKey = `timetable:v3:${config.spreadsheetId}:${config.range}`;
+const cacheKey = `timetable:v4:${config.spreadsheetId}`;
 const tokenScope = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const firstWeekRows = [
   { name: 6, content: 7 },
@@ -21,6 +20,7 @@ const firstWeekdayColumn = 1;
 const rowsPerWeek = 21;
 const weekCount = 5;
 const firstDateRow = 3;
+const excludedMonths = new Set([8]);
 
 const sampleLessons = [
   [
@@ -74,7 +74,7 @@ const elements = {
 
 let accessToken = sessionStorage.getItem("googleAccessToken") || "";
 let tokenClient;
-let currentWeeks = [{ dates: [], lessons: sampleLessons }];
+let currentWeeks = [{ dates: [], lessons: sampleLessons, month: null, sheetTitle: "" }];
 let selectedWeekIndex = 0;
 
 function startOfWeek(date = new Date()) {
@@ -84,18 +84,6 @@ function startOfWeek(date = new Date()) {
   copy.setDate(copy.getDate() + distance);
   copy.setHours(0, 0, 0, 0);
   return copy;
-}
-
-function formatWeekRange() {
-  const monday = startOfWeek();
-  const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4);
-  const sameMonth = monday.getMonth() === friday.getMonth();
-  const first = `${monday.getMonth() + 1}月${monday.getDate()}日`;
-  const second = sameMonth
-    ? `${friday.getDate()}日`
-    : `${friday.getMonth() + 1}月${friday.getDate()}日`;
-  return `${first}–${second}`;
 }
 
 function todayWeekdayIndex() {
@@ -153,41 +141,58 @@ function parseDayNumber(value) {
   return match ? Number(match[0]) : null;
 }
 
-function expectedCurrentWeekDays() {
-  const monday = startOfWeek();
-  return weekdays.map((_, index) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + index);
-    return date.getDate();
-  });
+function dateFromIso(value) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function findCurrentWeekIndex(weeks) {
-  const expectedDays = expectedCurrentWeekDays();
-  const exactIndex = weeks.findIndex(
-    (week) =>
-      week.dates.length === weekdays.length &&
-      week.dates.every((day, index) => day === expectedDays[index]),
-  );
-
-  if (exactIndex >= 0) return exactIndex;
-
   const today = new Date();
-  const weekdayIndex = dayIndexes.indexOf(today.getDay());
-  if (weekdayIndex >= 0) {
-    const matchingIndex = weeks.findIndex(
-      (week) => week.dates[weekdayIndex] === today.getDate(),
-    );
-    if (matchingIndex >= 0) return matchingIndex;
-  }
+  today.setHours(0, 0, 0, 0);
+  let nearestIndex = 0;
+  let nearestDistance = Number.POSITIVE_INFINITY;
 
-  return 0;
+  weeks.forEach((week, index) => {
+    const dates = week.dates.map(dateFromIso).filter(Boolean);
+    if (!dates.length) return;
+    const start = dates[0];
+    const end = dates.at(-1);
+
+    if (today >= start && today <= end) {
+      nearestIndex = index;
+      nearestDistance = 0;
+      return;
+    }
+
+    const distance = Math.min(
+      Math.abs(today.getTime() - start.getTime()),
+      Math.abs(today.getTime() - end.getTime()),
+    );
+    if (distance < nearestDistance) {
+      nearestIndex = index;
+      nearestDistance = distance;
+    }
+  });
+
+  return nearestIndex;
 }
 
-function weekDisplayLabel(week, index) {
-  const availableDates = week.dates.filter(Number.isFinite);
-  if (!availableDates.length) return `第${index + 1}週`;
-  return `第${index + 1}週　${availableDates[0]}日–${availableDates.at(-1)}日`;
+function formatDateRange(week) {
+  const dates = week.dates.map(dateFromIso).filter(Boolean);
+  if (!dates.length) return "週間時間割";
+  const start = dates[0];
+  const end = dates.at(-1);
+  const startLabel = `${start.getMonth() + 1}月${start.getDate()}日`;
+  const endLabel =
+    start.getMonth() === end.getMonth()
+      ? `${end.getDate()}日`
+      : `${end.getMonth() + 1}月${end.getDate()}日`;
+  return `${startLabel}〜${endLabel}`;
+}
+
+function weekDisplayLabel(week) {
+  return week.sheetTitle ? `${week.sheetTitle}の時間割` : "時間割";
 }
 
 function selectWeek(index) {
@@ -197,31 +202,72 @@ function selectWeek(index) {
   const currentWeekIndex = findCurrentWeekIndex(currentWeeks);
 
   renderTimetable(week.lessons, selectedWeekIndex === currentWeekIndex);
-  elements.weekLabel.textContent = weekDisplayLabel(week, selectedWeekIndex);
-  elements.weekRange.textContent = weekDisplayLabel(week, selectedWeekIndex);
+  const dateRange = formatDateRange(week);
+  elements.appTitle.textContent = dateRange;
+  document.title = `${dateRange} | 時間割`;
+  elements.weekLabel.textContent = weekDisplayLabel(week);
+  elements.weekRange.textContent = "";
   elements.previousWeek.disabled = selectedWeekIndex === 0;
   elements.nextWeek.disabled = selectedWeekIndex === currentWeeks.length - 1;
 }
 
-function parseSheet(values) {
-  const lastRequiredRow =
-    firstWeekRows.at(-1).content + rowsPerWeek * (weekCount - 1);
-  if (!Array.isArray(values) || values.length < lastRequiredRow) {
-    throw new Error("シートに時間割データがありません。");
+function buildWeekDates(days, sheetMonth, year) {
+  let month = sheetMonth;
+  let dateYear = year;
+  let previousDay = null;
+
+  if (days[0] > 20) {
+    month -= 1;
+    if (month === 0) {
+      month = 12;
+      dateYear -= 1;
+    }
   }
+
+  return days.map((day) => {
+    if (!Number.isFinite(day)) return null;
+    if (previousDay !== null && day < previousDay) {
+      month += 1;
+      if (month === 13) {
+        month = 1;
+        dateYear += 1;
+      }
+    }
+    previousDay = day;
+    const monthText = String(month).padStart(2, "0");
+    const dayText = String(day).padStart(2, "0");
+    return `${dateYear}-${monthText}-${dayText}`;
+  });
+}
+
+function shouldHideLesson(dateIso, periodIndex) {
+  const date = dateFromIso(dateIso);
+  return (
+    date?.getMonth() === 5 &&
+    date.getDate() === 17 &&
+    (periodIndex === 2 || periodIndex === 3)
+  );
+}
+
+function parseSheet(values, sheetMonth, sheetTitle, year) {
+  if (!Array.isArray(values) || !values.length) return [];
 
   return Array.from({ length: weekCount }, (_, weekIndex) => {
     const rowOffset = rowsPerWeek * weekIndex;
     const dateRow = values[firstDateRow + rowOffset - 1] || [];
-    const dates = weekdays.map((_, dayIndex) =>
+    const dayNumbers = weekdays.map((_, dayIndex) =>
       parseDayNumber(dateRow[firstWeekdayColumn + dayIndex]),
     );
+    const dates = buildWeekDates(dayNumbers, sheetMonth, year);
     const lessons = firstWeekRows.map(
-      ({ name: nameRowNumber, content: contentRowNumber }) => {
+      ({ name: nameRowNumber, content: contentRowNumber }, periodIndex) => {
         const nameRow = values[nameRowNumber + rowOffset - 1] || [];
         const contentRow = values[contentRowNumber + rowOffset - 1] || [];
         return weekdays.map((_, dayIndex) => {
           const columnIndex = firstWeekdayColumn + dayIndex;
+          if (shouldHideLesson(dates[dayIndex], periodIndex)) {
+            return { name: "", content: "" };
+          }
           const name = String(nameRow[columnIndex] || "").trim();
 
           return {
@@ -232,8 +278,8 @@ function parseSheet(values) {
       },
     );
 
-    return { dates, lessons };
-  });
+    return { dates, lessons, month: sheetMonth, sheetTitle };
+  }).filter((week) => week.dates.some(Boolean));
 }
 
 function setLoading(loading) {
@@ -297,6 +343,90 @@ async function fetchProfile() {
   elements.accountButton.title = profile.name || "Googleアカウント";
 }
 
+async function googleApiFetch(url) {
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status === 401) {
+    accessToken = "";
+    sessionStorage.removeItem("googleAccessToken");
+    requestAccessToken();
+    return null;
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.message || "時間割を取得できませんでした。");
+  }
+
+  return response.json();
+}
+
+async function fetchMonthSheetTitles() {
+  const endpoint = new URL(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.spreadsheetId)}`,
+  );
+  endpoint.searchParams.set("fields", "sheets.properties.title");
+  const data = await googleApiFetch(endpoint);
+  if (!data) return null;
+
+  return data.sheets
+    .map((sheet) => sheet.properties?.title || "")
+    .map((title) => {
+      const match = title.match(/^(\d{1,2})月$/);
+      return match ? { title, month: Number(match[1]) } : null;
+    })
+    .filter(
+      (sheet) =>
+        sheet &&
+        sheet.month >= 1 &&
+        sheet.month <= 12 &&
+        !excludedMonths.has(sheet.month),
+    )
+    .sort((a, b) => a.month - b.month);
+}
+
+async function fetchAllMonthValues(monthSheets) {
+  const endpoint = new URL(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.spreadsheetId)}/values:batchGet`,
+  );
+  endpoint.searchParams.set("majorDimension", "ROWS");
+  monthSheets.forEach(({ title }) => {
+    endpoint.searchParams.append("ranges", `'${title}'!${config.cellRange}`);
+  });
+  const data = await googleApiFetch(endpoint);
+  return data?.valueRanges || null;
+}
+
+function mergeMonthWeeks(monthSheets, valueRanges) {
+  const year = new Date().getFullYear();
+  const seen = new Set();
+  const weeks = [];
+
+  monthSheets.forEach((sheet, index) => {
+    const parsedWeeks = parseSheet(
+      valueRanges[index]?.values || [],
+      sheet.month,
+      sheet.title,
+      year,
+    );
+    parsedWeeks.forEach((week) => {
+      const key = week.dates.filter(Boolean).join(",");
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        weeks.push(week);
+      }
+    });
+  });
+
+  return weeks.sort((a, b) => {
+    const firstA = a.dates.find(Boolean) || "";
+    const firstB = b.dates.find(Boolean) || "";
+    return firstA.localeCompare(firstB);
+  });
+}
+
 async function fetchTimetable({ manual = false } = {}) {
   if (!config.spreadsheetId || !config.googleClientId) {
     showNotice("現在はサンプル表示です。config.js にGoogle OAuthとスプレッドシートを設定すると実データへ切り替わります。");
@@ -311,29 +441,17 @@ async function fetchTimetable({ manual = false } = {}) {
   setLoading(true);
   showNotice("");
   try {
-    const endpoint = new URL(
-      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.spreadsheetId)}/values/${encodeURIComponent(config.range)}`,
-    );
-    endpoint.searchParams.set("majorDimension", "ROWS");
-
-    const response = await fetch(endpoint, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (response.status === 401) {
-      accessToken = "";
-      sessionStorage.removeItem("googleAccessToken");
-      requestAccessToken();
-      return;
+    const monthSheets = await fetchMonthSheetTitles();
+    if (!monthSheets) return;
+    if (!monthSheets.length) {
+      throw new Error("「○月」という名前の時間割シートが見つかりません。");
     }
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error?.message || "時間割を取得できませんでした。");
+    const valueRanges = await fetchAllMonthValues(monthSheets);
+    if (!valueRanges) return;
+    const weeks = mergeMonthWeeks(monthSheets, valueRanges);
+    if (!weeks.length) {
+      throw new Error("月別シートに時間割データがありません。");
     }
-
-    const data = await response.json();
-    const weeks = parseSheet(data.values);
     const cache = { weeks, updatedAt: Date.now() };
     localStorage.setItem(cacheKey, JSON.stringify(cache));
     applyCache(cache);
@@ -376,10 +494,7 @@ function requestAccessToken() {
 }
 
 function initialize() {
-  document.title = config.title;
-  elements.appTitle.textContent = config.title;
   elements.className.textContent = config.className;
-  elements.weekRange.textContent = formatWeekRange();
   selectWeek(0);
 
   const cache = readCache();
