@@ -8,7 +8,7 @@ const config = {
 
 const weekdays = ["月", "火", "水", "木", "金"];
 const dayIndexes = [1, 2, 3, 4, 5];
-const cacheKey = `timetable:v4:${config.spreadsheetId}`;
+const cacheKey = `timetable:v5:${config.spreadsheetId}`;
 const tokenScope = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const firstWeekRows = [
   { name: 6, content: 7 },
@@ -31,13 +31,13 @@ const lessonAbbreviations = new Map([
   ["カラープランニング", "カラー"],
   ["プロダクトデザイン", "Pデザ"],
   ["特別講義", "特講"],
-  ["自由選択", "自由"],
+  ["自由選択", "選択"],
   ["プロモーションフォト", "Pフォト"],
   ["ファッショーマーケティング論", "FMK論"],
   ["ファッションマーケティング論", "FMK論"],
   ["エディトリアルワーク", "エディ"],
   ["ファッション商品知識", "知識"],
-  ["デジタルマーケティング", "Dマーケ"],
+  ["デジタルマーケティング", "デジタル"],
 ]);
 
 const sampleLessons = [
@@ -251,32 +251,35 @@ function selectWeek(index) {
   elements.nextWeek.disabled = selectedWeekIndex === currentWeeks.length - 1;
 }
 
-function buildWeekDates(days, sheetMonth, year) {
-  let month = sheetMonth;
-  let dateYear = year;
-  let previousDay = null;
+function findSheetStartDate(values, sheetMonth, year) {
+  const firstDateValues = values[firstDateRow - 1] || [];
+  const days = weekdays.map((_, dayIndex) =>
+    parseDayNumber(firstDateValues[firstWeekdayColumn + dayIndex]),
+  );
+  const firstValidIndex = days.findIndex(Number.isFinite);
 
-  if (days[0] > 20) {
-    month -= 1;
-    if (month === 0) {
-      month = 12;
-      dateYear -= 1;
-    }
+  if (firstValidIndex === -1) {
+    const firstOfMonth = new Date(year, sheetMonth - 1, 1);
+    const weekday = firstOfMonth.getDay();
+    const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
+    firstOfMonth.setDate(firstOfMonth.getDate() - daysFromMonday);
+    return firstOfMonth;
   }
 
-  return days.map((day) => {
-    if (!Number.isFinite(day)) return null;
-    if (previousDay !== null && day < previousDay) {
-      month += 1;
-      if (month === 13) {
-        month = 1;
-        dateYear += 1;
-      }
-    }
-    previousDay = day;
-    const monthText = String(month).padStart(2, "0");
-    const dayText = String(day).padStart(2, "0");
-    return `${dateYear}-${monthText}-${dayText}`;
+  const day = days[firstValidIndex];
+  const monthOffset = day > 20 ? -1 : 0;
+  const date = new Date(year, sheetMonth - 1 + monthOffset, day);
+  date.setDate(date.getDate() - firstValidIndex);
+  return date;
+}
+
+function buildWeekDates(sheetStartDate, weekIndex) {
+  return weekdays.map((_, dayIndex) => {
+    const date = new Date(sheetStartDate);
+    date.setDate(date.getDate() + weekIndex * 7 + dayIndex);
+    const monthText = String(date.getMonth() + 1).padStart(2, "0");
+    const dayText = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${monthText}-${dayText}`;
   });
 }
 
@@ -291,14 +294,11 @@ function shouldHideLesson(dateIso, periodIndex) {
 
 function parseSheet(values, sheetMonth, sheetTitle, year) {
   if (!Array.isArray(values) || !values.length) return [];
+  const sheetStartDate = findSheetStartDate(values, sheetMonth, year);
 
   return Array.from({ length: weekCount }, (_, weekIndex) => {
     const rowOffset = rowsPerWeek * weekIndex;
-    const dateRow = values[firstDateRow + rowOffset - 1] || [];
-    const dayNumbers = weekdays.map((_, dayIndex) =>
-      parseDayNumber(dateRow[firstWeekdayColumn + dayIndex]),
-    );
-    const dates = buildWeekDates(dayNumbers, sheetMonth, year);
+    const dates = buildWeekDates(sheetStartDate, weekIndex);
     const lessons = firstWeekRows.map(
       ({ name: nameRowNumber, content: contentRowNumber }, periodIndex) => {
         const nameRow = values[nameRowNumber + rowOffset - 1] || [];
