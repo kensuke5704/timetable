@@ -21,6 +21,24 @@ const rowsPerWeek = 21;
 const weekCount = 5;
 const firstDateRow = 3;
 const excludedMonths = new Set([8]);
+const lessonAbbreviations = new Map([
+  ["オウンドメディア演習", "OM演習"],
+  ["ファッションプロモーション", "FP"],
+  ["ムービーワーク", "MOV"],
+  ["グラフィックデザインし", "Gデザ"],
+  ["グラフィックデザイン", "Gデザ"],
+  ["メディア活用論", "M活用"],
+  ["カラープランニング", "カラー"],
+  ["プロダクトデザイン", "Pデザ"],
+  ["特別講義", "特講"],
+  ["自由選択", "自由"],
+  ["プロモーションフォト", "Pフォト"],
+  ["ファッショーマーケティング論", "FMK論"],
+  ["ファッションマーケティング論", "FMK論"],
+  ["エディトリアルワーク", "エディ"],
+  ["ファッション商品知識", "知識"],
+  ["デジタルマーケティング", "Dマーケ"],
+]);
 
 const sampleLessons = [
   [
@@ -60,6 +78,10 @@ const elements = {
   appTitle: document.querySelector("#app-title"),
   className: document.querySelector("#class-name"),
   dataSource: document.querySelector("#data-source"),
+  detailClose: document.querySelector("#detail-close"),
+  detailContent: document.querySelector("#detail-content"),
+  detailDialog: document.querySelector("#lesson-detail"),
+  detailTitle: document.querySelector("#detail-title"),
   lastUpdated: document.querySelector("#last-updated"),
   loadingOverlay: document.querySelector("#loading-overlay"),
   notice: document.querySelector("#notice"),
@@ -98,6 +120,21 @@ function cell(className, text) {
   return node;
 }
 
+function abbreviateLessonName(name) {
+  const normalized = String(name || "").trim();
+  return lessonAbbreviations.get(normalized) || normalized;
+}
+
+function openLessonDetail(lesson) {
+  elements.detailTitle.textContent = lesson.name;
+  elements.detailContent.textContent = lesson.content || "内容はありません";
+  elements.detailDialog.showModal();
+}
+
+function closeLessonDetail() {
+  elements.detailDialog.close();
+}
+
 function renderTimetable(lessons, highlightToday = true) {
   const today = highlightToday ? todayWeekdayIndex() : -1;
   const fragment = document.createDocumentFragment();
@@ -117,17 +154,20 @@ function renderTimetable(lessons, highlightToday = true) {
       if (column === today) lessonCell.classList.add("today-column");
 
       if (lesson.name) {
+        const trigger = document.createElement("button");
+        trigger.className = "lesson-trigger";
+        trigger.type = "button";
+        trigger.setAttribute(
+          "aria-label",
+          `${lesson.name}${lesson.content ? `、${lesson.content}` : ""}`,
+        );
+        trigger.addEventListener("click", () => openLessonDetail(lesson));
+
         const name = document.createElement("span");
         name.className = "lesson-name";
-        name.textContent = lesson.name;
-        lessonCell.append(name);
-
-        if (lesson.content) {
-          const content = document.createElement("span");
-          content.className = "lesson-content";
-          content.textContent = lesson.content;
-          lessonCell.append(content);
-        }
+        name.textContent = abbreviateLessonName(lesson.name);
+        trigger.append(name);
+        lessonCell.append(trigger);
       }
       fragment.append(lessonCell);
     });
@@ -516,5 +556,9 @@ elements.signInButton.addEventListener("click", requestAccessToken);
 elements.accountButton.addEventListener("click", requestAccessToken);
 elements.previousWeek.addEventListener("click", () => selectWeek(selectedWeekIndex - 1));
 elements.nextWeek.addEventListener("click", () => selectWeek(selectedWeekIndex + 1));
+elements.detailClose.addEventListener("click", closeLessonDetail);
+elements.detailDialog.addEventListener("click", (event) => {
+  if (event.target === elements.detailDialog) closeLessonDetail();
+});
 
 initialize();
