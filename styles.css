@@ -125,6 +125,45 @@ h1 {
   line-height: 1.5;
 }
 
+.week-navigation {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(120px, 2fr) minmax(80px, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.week-navigation button {
+  min-height: 40px;
+  border: 1px solid #c5d6ea;
+  border-radius: 10px;
+  color: #1d5fac;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.week-navigation button:hover,
+.week-navigation button:focus-visible {
+  border-color: var(--accent);
+  background: #f0f7ff;
+  outline: none;
+}
+
+.week-navigation button:disabled {
+  color: #98a7b9;
+  border-color: #e0e7ef;
+  background: #f7f9fb;
+  cursor: default;
+}
+
+.week-navigation strong {
+  color: #10294f;
+  font-size: 0.92rem;
+}
+
 .timetable-scroll {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
