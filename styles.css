@@ -483,7 +483,7 @@ h1 {
   }
 
   .grid-cell {
-    min-height: calc((100svh - 250px) / 4);
+    min-height: calc((100svh - 290px) / 4);
     padding: 4px 2px;
   }
 
