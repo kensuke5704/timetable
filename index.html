@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#f7faff" />
     <meta name="description" content="Googleスプレッドシートと連携する学校向け週間時間割" />
     <title>時間割</title>
-    <link rel="stylesheet" href="./styles.css?v=20260610-2" />
-    <script src="./config.js?v=20260610-2"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260610-3" />
+    <script src="./config.js?v=20260610-3"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./app.js?v=20260610-2" type="module"></script>
+    <script src="./app.js?v=20260610-3" type="module"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -59,6 +59,17 @@
         </button>
       </footer>
     </main>
+
+    <dialog class="lesson-detail" id="lesson-detail">
+      <div class="lesson-detail-panel">
+        <div>
+          <p class="lesson-detail-label">授業内容</p>
+          <h2 id="detail-title"></h2>
+          <p id="detail-content"></p>
+        </div>
+        <button id="detail-close" type="button">閉じる</button>
+      </div>
+    </dialog>
 
     <div class="loading-overlay" id="loading-overlay" hidden>
       <div class="loading-panel" role="status">
