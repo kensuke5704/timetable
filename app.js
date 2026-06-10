@@ -94,7 +94,7 @@ const elements = {
   weekRange: document.querySelector("#week-range"),
 };
 
-let accessToken = sessionStorage.getItem("googleAccessToken") || "";
+let accessToken = localStorage.getItem("googleAccessToken") || "";
 let tokenClient;
 let currentWeeks = [{ dates: [], lessons: sampleLessons, month: null, sheetTitle: "" }];
 let selectedWeekIndex = 0;
@@ -390,7 +390,7 @@ async function googleApiFetch(url) {
 
   if (response.status === 401) {
     accessToken = "";
-    sessionStorage.removeItem("googleAccessToken");
+    localStorage.removeItem("googleAccessToken");
     requestAccessToken();
     return null;
   }
@@ -524,7 +524,7 @@ function requestAccessToken() {
         return;
       }
       accessToken = response.access_token;
-      sessionStorage.setItem("googleAccessToken", accessToken);
+      localStorage.setItem("googleAccessToken", accessToken);
       elements.signInButton.hidden = true;
       fetchProfile().catch(() => {});
       await fetchTimetable();
