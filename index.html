@@ -2,19 +2,16 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#f7faff" />
     <meta name="description" content="Googleスプレッドシートと連携する学校向け週間時間割" />
     <title>FP時間割</title>
     <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=20260611-1" />
     <link rel="icon" type="image/png" href="./apple-touch-icon.png?v=20260611-1" />
-    <link rel="stylesheet" href="./styles.css?v=20260611-4" />
-    <script src="./config.js?v=20260611-4"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260611-5" />
+    <script src="./config.js?v=20260611-5"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./app.js?v=20260611-4" type="module"></script>
+    <script src="./app.js?v=20260611-5" type="module"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -39,37 +36,22 @@
         <button id="next-week" type="button">次の週</button>
       </nav>
       <section class="timetable-section" aria-label="週間時間割">
-        <div class="timetable-scroll">
-          <div class="timetable" id="timetable"></div>
-        </div>
+        <div class="timetable-scroll"><div class="timetable" id="timetable"></div></div>
       </section>
       <footer class="app-footer">
-        <div class="status-line">
-          <span class="status-label">最終更新</span>
-          <time id="last-updated">未取得</time>
-        </div>
-        <div class="permission-line">
-          <strong>閲覧のみ</strong>
-          <span id="data-source">サンプル時間割を表示しています</span>
-        </div>
+        <div class="status-line"><span class="status-label">最終更新</span><time id="last-updated">未取得</time></div>
+        <div class="permission-line"><strong>閲覧のみ</strong><span id="data-source">サンプル時間割を表示しています</span></div>
         <button class="sign-in-button" id="sign-in-button" type="button">Googleでログイン</button>
       </footer>
     </main>
     <dialog class="lesson-detail" id="lesson-detail">
       <div class="lesson-detail-panel">
-        <div>
-          <p class="lesson-detail-label">授業内容</p>
-          <h2 id="detail-title"></h2>
-          <p id="detail-content"></p>
-        </div>
+        <div><p class="lesson-detail-label">授業内容</p><h2 id="detail-title"></h2><p id="detail-content"></p></div>
         <button id="detail-close" type="button">閉じる</button>
       </div>
     </dialog>
     <div class="loading-overlay" id="loading-overlay" hidden>
-      <div class="loading-panel" role="status">
-        <span class="spinner" aria-hidden="true"></span>
-        <span>時間割を取得しています</span>
-      </div>
+      <div class="loading-panel" role="status"><span class="spinner" aria-hidden="true"></span><span>時間割を取得しています</span></div>
     </div>
   </body>
 </html>
