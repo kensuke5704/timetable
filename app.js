@@ -12,88 +12,39 @@ const cacheKey = `timetable:v5:${config.spreadsheetId}`;
 const authorizationKey = `timetable:google-authorized:${config.googleClientId}`;
 const tokenExpiryKey = "googleAccessTokenExpiresAt";
 const tokenScope = "https://www.googleapis.com/auth/spreadsheets.readonly";
-const firstWeekRows = [
-  { name: 6, content: 7 },
-  { name: 10, content: 11 },
-  { name: 15, content: 16 },
-  { name: 19, content: 20 },
-];
+const firstWeekRows = [{ name: 6, content: 7 }, { name: 10, content: 11 }, { name: 15, content: 16 }, { name: 19, content: 20 }];
 const firstWeekdayColumn = 1;
 const rowsPerWeek = 21;
 const weekCount = 5;
 const firstDateRow = 3;
 const excludedMonths = new Set([8]);
 const lessonAbbreviations = new Map([
-  ["オウンドメディア演習", "OM演習"],
-  ["ファッションプロモーション", "FP"],
-  ["ムービーワーク", "MOV"],
-  ["グラフィックデザインし", "Gデザ"],
-  ["グラフィックデザイン", "Gデザ"],
-  ["メディア活用論", "M活用"],
-  ["カラープランニング", "カラー"],
-  ["プロダクトデザイン", "Pデザ"],
-  ["特別講義", "特講"],
-  ["自由選択", "選択"],
-  ["プロモーションフォト", "Pフォト"],
-  ["ファッショーマーケティング論", "FMK論"],
-  ["ファッションマーケティング論", "FMK論"],
-  ["エディトリアルワーク", "エディ"],
-  ["ファッション商品知識", "知識"],
-  ["デジタルマーケティング", "デジタル"],
+  ["オウンドメディア演習", "OM演習"], ["ファッションプロモーション", "FP"], ["ムービーワーク", "MOV"],
+  ["グラフィックデザインし", "Gデザ"], ["グラフィックデザイン", "Gデザ"], ["メディア活用論", "M活用"],
+  ["カラープランニング", "カラー"], ["プロダクトデザイン", "Pデザ"], ["特別講義", "特講"],
+  ["自由選択", "選択"], ["プロモーションフォト", "Pフォト"], ["ファッショーマーケティング論", "FMK論"],
+  ["ファッションマーケティング論", "FMK論"], ["エディトリアルワーク", "エディ"],
+  ["ファッション商品知識", "知識"], ["デジタルマーケティング", "デジタル"],
 ]);
 
 const sampleLessons = [
-  [
-    { name: "国語", content: "漢字テスト" },
-    { name: "数学", content: "一次方程式" },
-    { name: "英語", content: "Unit 3" },
-    { name: "理科", content: "植物の分類" },
-    { name: "社会", content: "鎌倉時代" },
-  ],
-  [
-    { name: "数学", content: "一次方程式" },
-    { name: "国語", content: "漢字テスト" },
-    { name: "理科", content: "植物の分類" },
-    { name: "英語", content: "Unit 3" },
-    { name: "数学", content: "一次方程式" },
-  ],
-  [
-    { name: "英語", content: "Unit 3" },
-    { name: "理科", content: "物質の性質" },
-    { name: "国語", content: "古典の読解" },
-    { name: "社会", content: "鎌倉時代" },
-    { name: "体育", content: "バレーボール" },
-  ],
-  [
-    { name: "社会", content: "鎌倉時代" },
-    { name: "英語", content: "Unit 3" },
-    { name: "数学", content: "一次方程式" },
-    { name: "国語", content: "古典の読解" },
-    { name: "理科", content: "物質の性質" },
-  ],
+  [{ name: "国語", content: "漢字テスト" }, { name: "数学", content: "一次方程式" }, { name: "英語", content: "Unit 3" }, { name: "理科", content: "植物の分類" }, { name: "社会", content: "鎌倉時代" }],
+  [{ name: "数学", content: "一次方程式" }, { name: "国語", content: "漢字テスト" }, { name: "理科", content: "植物の分類" }, { name: "英語", content: "Unit 3" }, { name: "数学", content: "一次方程式" }],
+  [{ name: "英語", content: "Unit 3" }, { name: "理科", content: "物質の性質" }, { name: "国語", content: "古典の読解" }, { name: "社会", content: "鎌倉時代" }, { name: "体育", content: "バレーボール" }],
+  [{ name: "社会", content: "鎌倉時代" }, { name: "英語", content: "Unit 3" }, { name: "数学", content: "一次方程式" }, { name: "国語", content: "古典の読解" }, { name: "理科", content: "物質の性質" }],
 ];
 
 const elements = {
-  accountButton: document.querySelector("#account-button"),
-  accountImage: document.querySelector("#account-image"),
-  accountInitial: document.querySelector("#account-initial"),
-  appTitle: document.querySelector("#app-title"),
-  className: document.querySelector("#class-name"),
-  dataSource: document.querySelector("#data-source"),
-  detailClose: document.querySelector("#detail-close"),
-  detailContent: document.querySelector("#detail-content"),
-  detailDialog: document.querySelector("#lesson-detail"),
-  detailTitle: document.querySelector("#detail-title"),
-  lastUpdated: document.querySelector("#last-updated"),
-  loadingOverlay: document.querySelector("#loading-overlay"),
-  notice: document.querySelector("#notice"),
-  nextWeek: document.querySelector("#next-week"),
-  previousWeek: document.querySelector("#previous-week"),
-  refreshButton: document.querySelector("#refresh-button"),
-  signInButton: document.querySelector("#sign-in-button"),
-  timetable: document.querySelector("#timetable"),
-  weekLabel: document.querySelector("#week-label"),
-  weekRange: document.querySelector("#week-range"),
+  accountButton: document.querySelector("#account-button"), accountImage: document.querySelector("#account-image"),
+  accountInitial: document.querySelector("#account-initial"), appTitle: document.querySelector("#app-title"),
+  className: document.querySelector("#class-name"), dataSource: document.querySelector("#data-source"),
+  detailClose: document.querySelector("#detail-close"), detailContent: document.querySelector("#detail-content"),
+  detailDialog: document.querySelector("#lesson-detail"), detailTitle: document.querySelector("#detail-title"),
+  lastUpdated: document.querySelector("#last-updated"), loadingOverlay: document.querySelector("#loading-overlay"),
+  notice: document.querySelector("#notice"), nextWeek: document.querySelector("#next-week"),
+  previousWeek: document.querySelector("#previous-week"), refreshButton: document.querySelector("#refresh-button"),
+  signInButton: document.querySelector("#sign-in-button"), timetable: document.querySelector("#timetable"),
+  weekLabel: document.querySelector("#week-label"), weekRange: document.querySelector("#week-range"),
 };
 
 let accessToken = localStorage.getItem("googleAccessToken") || "";
@@ -110,33 +61,23 @@ let pendingAuthorization = { interactive: true, manual: false };
 let currentWeeks = [{ dates: [], lessons: sampleLessons, month: null, sheetTitle: "" }];
 let selectedWeekIndex = 0;
 
-function todayWeekdayIndex() {
-  const day = new Date().getDay();
-  return dayIndexes.indexOf(day);
-}
-
+function todayWeekdayIndex() { return dayIndexes.indexOf(new Date().getDay()); }
 function cell(className, text) {
   const node = document.createElement("div");
   node.className = `grid-cell ${className}`;
   if (text) node.textContent = text;
   return node;
 }
-
 function abbreviateLessonName(name) {
   const normalized = String(name || "").trim();
   return lessonAbbreviations.get(normalized) || normalized;
 }
-
 function openLessonDetail(lesson) {
   elements.detailTitle.textContent = lesson.name;
   elements.detailContent.textContent = lesson.content || "内容はありません";
   elements.detailDialog.showModal();
 }
-
-function closeLessonDetail() {
-  elements.detailDialog.close();
-}
-
+function closeLessonDetail() { elements.detailDialog.close(); }
 function renderTimetable(lessons, highlightToday = true) {
   const today = highlightToday ? todayWeekdayIndex() : -1;
   const fragment = document.createDocumentFragment();
@@ -169,18 +110,15 @@ function renderTimetable(lessons, highlightToday = true) {
   });
   elements.timetable.replaceChildren(fragment);
 }
-
 function parseDayNumber(value) {
   const match = String(value ?? "").match(/\d+/);
   return match ? Number(match[0]) : null;
 }
-
 function dateFromIso(value) {
   if (!value) return null;
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
 }
-
 function findCurrentWeekIndex(weeks) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -204,11 +142,16 @@ function findCurrentWeekIndex(weeks) {
   });
   return nearestIndex;
 }
-
-function weekDisplayLabel(week) {
-  return week.sheetTitle ? `${week.sheetTitle}の時間割` : "時間割";
+function formatDateRange(week) {
+  const dates = week.dates.map(dateFromIso).filter(Boolean);
+  if (!dates.length) return "週間時間割";
+  const start = dates[0];
+  const end = dates.at(-1);
+  const startLabel = `${start.getMonth() + 1}月${start.getDate()}日`;
+  const endLabel = start.getMonth() === end.getMonth() ? `${end.getDate()}日` : `${end.getMonth() + 1}月${end.getDate()}日`;
+  return `${startLabel}〜${endLabel}`;
 }
-
+function weekDisplayLabel(week) { return week.sheetTitle ? `${week.sheetTitle}の時間割` : "時間割"; }
 function selectWeek(index) {
   if (!currentWeeks.length) return;
   selectedWeekIndex = Math.max(0, Math.min(index, currentWeeks.length - 1));
@@ -218,11 +161,10 @@ function selectWeek(index) {
   elements.appTitle.textContent = "FP時間割";
   document.title = "FP時間割";
   elements.weekLabel.textContent = weekDisplayLabel(week);
-  elements.weekRange.textContent = "";
+  elements.weekRange.textContent = formatDateRange(week);
   elements.previousWeek.disabled = selectedWeekIndex === 0;
   elements.nextWeek.disabled = selectedWeekIndex === currentWeeks.length - 1;
 }
-
 function findSheetStartDate(values, sheetMonth, year) {
   const firstDateValues = values[firstDateRow - 1] || [];
   const days = weekdays.map((_, dayIndex) => parseDayNumber(firstDateValues[firstWeekdayColumn + dayIndex]));
@@ -240,7 +182,6 @@ function findSheetStartDate(values, sheetMonth, year) {
   date.setDate(date.getDate() - firstValidIndex);
   return date;
 }
-
 function buildWeekDates(sheetStartDate, weekIndex) {
   return weekdays.map((_, dayIndex) => {
     const date = new Date(sheetStartDate);
@@ -250,12 +191,10 @@ function buildWeekDates(sheetStartDate, weekIndex) {
     return `${date.getFullYear()}-${monthText}-${dayText}`;
   });
 }
-
 function shouldHideLesson(dateIso, periodIndex) {
   const date = dateFromIso(dateIso);
   return date?.getMonth() === 5 && date.getDate() === 17 && (periodIndex === 2 || periodIndex === 3);
 }
-
 function parseSheet(values, sheetMonth, sheetTitle, year) {
   if (!Array.isArray(values) || !values.length) return [];
   const sheetStartDate = findSheetStartDate(values, sheetMonth, year);
@@ -275,17 +214,14 @@ function parseSheet(values, sheetMonth, sheetTitle, year) {
     return { dates, lessons, month: sheetMonth, sheetTitle };
   }).filter((week) => week.dates.some(Boolean));
 }
-
 function setLoading(loading) {
   elements.loadingOverlay.hidden = !loading;
   elements.refreshButton.disabled = loading;
 }
-
 function showNotice(message = "") {
   elements.notice.textContent = message;
   elements.notice.hidden = !message;
 }
-
 function formatUpdatedAt(timestamp) {
   if (!timestamp) return "未取得";
   const date = new Date(timestamp);
@@ -294,19 +230,15 @@ function formatUpdatedAt(timestamp) {
   const time = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" }).format(date);
   return `${isToday ? "今日" : `${date.getMonth() + 1}月${date.getDate()}日`} ${time}`;
 }
-
 function readCache() {
   try { return JSON.parse(localStorage.getItem(cacheKey) || "null"); } catch { return null; }
 }
-
 function cacheIsFromToday(cache) {
   return Boolean(cache?.updatedAt) && new Date(cache.updatedAt).toDateString() === new Date().toDateString();
 }
-
 function hasPreviousAuthorization() {
   return Boolean(localStorage.getItem(authorizationKey) || localStorage.getItem(cacheKey));
 }
-
 function applyCache(cache) {
   if (!Array.isArray(cache?.weeks) || !cache.weeks.length) return false;
   currentWeeks = cache.weeks;
@@ -315,7 +247,6 @@ function applyCache(cache) {
   elements.dataSource.textContent = "Google スプレッドシートから取得しています";
   return true;
 }
-
 async function fetchProfile() {
   if (!accessToken) return;
   const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } });
@@ -325,12 +256,9 @@ async function fetchProfile() {
     elements.accountImage.src = profile.picture;
     elements.accountImage.hidden = false;
     elements.accountInitial.hidden = true;
-  } else if (profile.name) {
-    elements.accountInitial.textContent = profile.name.slice(0, 1);
-  }
+  } else if (profile.name) elements.accountInitial.textContent = profile.name.slice(0, 1);
   elements.accountButton.title = profile.name || "Googleアカウント";
 }
-
 async function googleApiFetch(url) {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
   if (response.status === 401) {
@@ -346,7 +274,6 @@ async function googleApiFetch(url) {
   }
   return response.json();
 }
-
 async function fetchMonthSheetTitles() {
   const endpoint = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.spreadsheetId)}`);
   endpoint.searchParams.set("fields", "sheets.properties.title");
@@ -357,7 +284,6 @@ async function fetchMonthSheetTitles() {
     return match ? { title, month: Number(match[1]) } : null;
   }).filter((sheet) => sheet && sheet.month >= 1 && sheet.month <= 12 && !excludedMonths.has(sheet.month)).sort((a, b) => a.month - b.month);
 }
-
 async function fetchAllMonthValues(monthSheets) {
   const endpoint = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.spreadsheetId)}/values:batchGet`);
   endpoint.searchParams.set("majorDimension", "ROWS");
@@ -365,7 +291,6 @@ async function fetchAllMonthValues(monthSheets) {
   const data = await googleApiFetch(endpoint);
   return data?.valueRanges || null;
 }
-
 function mergeMonthWeeks(monthSheets, valueRanges) {
   const year = new Date().getFullYear();
   const seen = new Set();
@@ -378,7 +303,6 @@ function mergeMonthWeeks(monthSheets, valueRanges) {
   });
   return weeks.sort((a, b) => (a.dates.find(Boolean) || "").localeCompare(b.dates.find(Boolean) || ""));
 }
-
 async function fetchTimetable({ manual = false } = {}) {
   if (!config.spreadsheetId || !config.googleClientId) {
     showNotice("現在はサンプル表示です。config.js にGoogle OAuthとスプレッドシートを設定すると実データへ切り替わります。");
@@ -405,11 +329,8 @@ async function fetchTimetable({ manual = false } = {}) {
     if (manual) showNotice("最新の時間割に更新しました。");
   } catch (error) {
     showNotice(error.message || "時間割を取得できませんでした。");
-  } finally {
-    setLoading(false);
-  }
+  } finally { setLoading(false); }
 }
-
 function requestAccessToken({ interactive = true, manual = false } = {}) {
   if (!config.googleClientId) {
     showNotice("Googleログインを利用するには config.js の googleClientId を設定してください。");
@@ -442,7 +363,6 @@ function requestAccessToken({ interactive = true, manual = false } = {}) {
   });
   tokenClient.requestAccessToken({ prompt: interactive ? "consent" : "" });
 }
-
 function restoreGoogleAuthorization() {
   if (accessToken || automaticAuthorizationPending || !hasPreviousAuthorization()) return;
   if (!window.google?.accounts?.oauth2) {
@@ -458,7 +378,6 @@ function restoreGoogleAuthorization() {
   automaticAuthorizationPending = true;
   requestAccessToken({ interactive: false });
 }
-
 function initialize() {
   elements.className.textContent = config.className;
   selectWeek(0);
@@ -471,9 +390,7 @@ function initialize() {
   } else if (accessToken) {
     fetchProfile();
     if (!cacheIsFromToday(cache)) fetchTimetable();
-  } else {
-    restoreGoogleAuthorization();
-  }
+  } else restoreGoogleAuthorization();
 }
 
 elements.refreshButton.addEventListener("click", () => fetchTimetable({ manual: true }));
@@ -482,8 +399,5 @@ elements.accountButton.addEventListener("click", () => requestAccessToken({ inte
 elements.previousWeek.addEventListener("click", () => selectWeek(selectedWeekIndex - 1));
 elements.nextWeek.addEventListener("click", () => selectWeek(selectedWeekIndex + 1));
 elements.detailClose.addEventListener("click", closeLessonDetail);
-elements.detailDialog.addEventListener("click", (event) => {
-  if (event.target === elements.detailDialog) closeLessonDetail();
-});
-
+elements.detailDialog.addEventListener("click", (event) => { if (event.target === elements.detailDialog) closeLessonDetail(); });
 initialize();
