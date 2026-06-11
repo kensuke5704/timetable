@@ -8,10 +8,19 @@
     <title>FP時間割</title>
     <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=20260611-1" />
     <link rel="icon" type="image/png" href="./apple-touch-icon.png?v=20260611-1" />
-    <link rel="stylesheet" href="./styles.css?v=20260611-5" />
-    <script src="./config.js?v=20260611-5"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260611-6" />
+    <style>
+      @media (max-width: 430px) {
+        .week-range {
+          display: block;
+          margin-top: 2px;
+          font-size: 0.68rem;
+        }
+      }
+    </style>
+    <script src="./config.js?v=20260611-6"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./app.js?v=20260611-5" type="module"></script>
+    <script src="./app.js?v=20260611-6" type="module"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -24,8 +33,7 @@
         <div class="header-actions">
           <button class="refresh-button" id="refresh-button" type="button">更新</button>
           <button class="account-button" id="account-button" type="button" aria-label="Googleアカウント">
-            <span id="account-initial">G</span>
-            <img id="account-image" alt="" hidden />
+            <span id="account-initial">G</span><img id="account-image" alt="" hidden />
           </button>
         </div>
       </header>
