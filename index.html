@@ -8,19 +8,20 @@
     <title>FP時間割</title>
     <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=20260611-1" />
     <link rel="icon" type="image/png" href="./apple-touch-icon.png?v=20260611-1" />
-    <link rel="stylesheet" href="./styles.css?v=20260611-6" />
+    <link rel="stylesheet" href="./styles.css?v=20260611-7" />
     <style>
+      .week-navigation-center { display: grid; justify-items: center; gap: 4px; }
+      .week-navigation .current-week-button { min-height: 26px; padding: 2px 12px; border-radius: 999px; font-size: 0.72rem; }
+      .lesson-cell.empty-lesson { background: #f1f3f6; }
       @media (max-width: 430px) {
-        .week-range {
-          display: block;
-          margin-top: 2px;
-          font-size: 0.68rem;
-        }
+        .week-range { display: block; margin-top: 2px; font-size: 0.68rem; }
+        .week-navigation-center { gap: 2px; }
+        .week-navigation .current-week-button { min-height: 24px; padding-inline: 10px; font-size: 0.68rem; }
       }
     </style>
-    <script src="./config.js?v=20260611-6"></script>
+    <script src="./config.js?v=20260611-7"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./app.js?v=20260611-6" type="module"></script>
+    <script src="./app.js?v=20260611-7" type="module"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -32,34 +33,26 @@
         </div>
         <div class="header-actions">
           <button class="refresh-button" id="refresh-button" type="button">更新</button>
-          <button class="account-button" id="account-button" type="button" aria-label="Googleアカウント">
-            <span id="account-initial">G</span><img id="account-image" alt="" hidden />
-          </button>
+          <button class="account-button" id="account-button" type="button" aria-label="Googleアカウント"><span id="account-initial">G</span><img id="account-image" alt="" hidden /></button>
         </div>
       </header>
       <section class="notice" id="notice" hidden aria-live="polite"></section>
       <nav class="week-navigation" aria-label="表示する週">
         <button id="previous-week" type="button">前の週</button>
-        <strong id="week-label">時間割</strong>
+        <div class="week-navigation-center">
+          <strong id="week-label">時間割</strong>
+          <button class="current-week-button" id="current-week" type="button">今週へ</button>
+        </div>
         <button id="next-week" type="button">次の週</button>
       </nav>
-      <section class="timetable-section" aria-label="週間時間割">
-        <div class="timetable-scroll"><div class="timetable" id="timetable"></div></div>
-      </section>
+      <section class="timetable-section" aria-label="週間時間割"><div class="timetable-scroll"><div class="timetable" id="timetable"></div></div></section>
       <footer class="app-footer">
         <div class="status-line"><span class="status-label">最終更新</span><time id="last-updated">未取得</time></div>
         <div class="permission-line"><strong>閲覧のみ</strong><span id="data-source">サンプル時間割を表示しています</span></div>
         <button class="sign-in-button" id="sign-in-button" type="button">Googleでログイン</button>
       </footer>
     </main>
-    <dialog class="lesson-detail" id="lesson-detail">
-      <div class="lesson-detail-panel">
-        <div><p class="lesson-detail-label">授業内容</p><h2 id="detail-title"></h2><p id="detail-content"></p></div>
-        <button id="detail-close" type="button">閉じる</button>
-      </div>
-    </dialog>
-    <div class="loading-overlay" id="loading-overlay" hidden>
-      <div class="loading-panel" role="status"><span class="spinner" aria-hidden="true"></span><span>時間割を取得しています</span></div>
-    </div>
+    <dialog class="lesson-detail" id="lesson-detail"><div class="lesson-detail-panel"><div><p class="lesson-detail-label">授業内容</p><h2 id="detail-title"></h2><p id="detail-content"></p></div><button id="detail-close" type="button">閉じる</button></div></dialog>
+    <div class="loading-overlay" id="loading-overlay" hidden><div class="loading-panel" role="status"><span class="spinner" aria-hidden="true"></span><span>時間割を取得しています</span></div></div>
   </body>
 </html>
