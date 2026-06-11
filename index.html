@@ -11,10 +11,10 @@
     <title>FP時間割</title>
     <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=20260611-1" />
     <link rel="icon" type="image/png" href="./apple-touch-icon.png?v=20260611-1" />
-    <link rel="stylesheet" href="./styles.css?v=20260611-3" />
-    <script src="./config.js?v=20260611-3"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260611-4" />
+    <script src="./config.js?v=20260611-4"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="./app.js?v=20260611-3" type="module"></script>
+    <script src="./app.js?v=20260611-4" type="module"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -24,32 +24,25 @@
           <h1 id="app-title">FP時間割</h1>
           <p class="week-range" id="week-range"></p>
         </div>
-
         <div class="header-actions">
-          <button class="refresh-button" id="refresh-button" type="button">
-            更新
-          </button>
+          <button class="refresh-button" id="refresh-button" type="button">更新</button>
           <button class="account-button" id="account-button" type="button" aria-label="Googleアカウント">
             <span id="account-initial">G</span>
             <img id="account-image" alt="" hidden />
           </button>
         </div>
       </header>
-
       <section class="notice" id="notice" hidden aria-live="polite"></section>
-
       <nav class="week-navigation" aria-label="表示する週">
         <button id="previous-week" type="button">前の週</button>
         <strong id="week-label">時間割</strong>
         <button id="next-week" type="button">次の週</button>
       </nav>
-
       <section class="timetable-section" aria-label="週間時間割">
         <div class="timetable-scroll">
           <div class="timetable" id="timetable"></div>
         </div>
       </section>
-
       <footer class="app-footer">
         <div class="status-line">
           <span class="status-label">最終更新</span>
@@ -59,12 +52,9 @@
           <strong>閲覧のみ</strong>
           <span id="data-source">サンプル時間割を表示しています</span>
         </div>
-        <button class="sign-in-button" id="sign-in-button" type="button">
-          Googleでログイン
-        </button>
+        <button class="sign-in-button" id="sign-in-button" type="button">Googleでログイン</button>
       </footer>
     </main>
-
     <dialog class="lesson-detail" id="lesson-detail">
       <div class="lesson-detail-panel">
         <div>
@@ -75,7 +65,6 @@
         <button id="detail-close" type="button">閉じる</button>
       </div>
     </dialog>
-
     <div class="loading-overlay" id="loading-overlay" hidden>
       <div class="loading-panel" role="status">
         <span class="spinner" aria-hidden="true"></span>
